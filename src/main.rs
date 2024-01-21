@@ -1,6 +1,6 @@
 use iced::{
     widget::{column, text, text_editor},
-    Element, Result, Sandbox, Settings,
+    Element, Result, Sandbox, Settings, Theme,
 };
 
 #[derive(Debug, Clone)]
@@ -39,6 +39,10 @@ impl Sandbox for Application {
             .spacing(10)
             .padding(10)
             .into()
+    }
+
+    fn theme(&self) -> Theme {
+        Theme::Dark
     }
 }
 
