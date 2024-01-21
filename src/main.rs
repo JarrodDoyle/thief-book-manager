@@ -1,6 +1,7 @@
 use iced::{
+    executor,
     widget::{column, text, text_editor},
-    Element, Result, Sandbox, Settings, Theme,
+    Application, Command, Element, Result, Settings, Theme,
 };
 
 #[derive(Debug, Clone)]
@@ -8,30 +9,38 @@ enum Message {
     Edit(text_editor::Action),
 }
 
-struct Application {
+struct BookManagerApp {
     book_content: text_editor::Content,
 }
 
-impl Sandbox for Application {
+impl Application for BookManagerApp {
+    type Executor = executor::Default;
+    type Flags = ();
     type Message = Message;
+    type Theme = Theme;
 
-    fn new() -> Self {
-        Self {
-            book_content: text_editor::Content::new(),
-        }
+    fn new(_flags: Self::Flags) -> (Self, Command<Self::Message>) {
+        (
+            Self {
+                book_content: text_editor::Content::new(),
+            },
+            Command::none(),
+        )
     }
 
     fn title(&self) -> String {
         String::from("Thief Book Manager")
     }
 
-    fn update(&mut self, message: Message) {
+    fn update(&mut self, message: Self::Message) -> Command<Self::Message> {
         match message {
             Message::Edit(action) => self.book_content.perform(action),
         }
+
+        Command::none()
     }
 
-    fn view(&self) -> Element<'_, Message> {
+    fn view(&self) -> Element<'_, Self::Message> {
         let hello_world = text("Hello, world!");
         let active_editor = text_editor(&self.book_content).on_action(Message::Edit);
 
@@ -47,5 +56,5 @@ impl Sandbox for Application {
 }
 
 fn main() -> Result {
-    Application::run(Settings::default())
+    BookManagerApp::run(Settings::default())
 }
