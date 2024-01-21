@@ -14,6 +14,7 @@ enum Message {
 
 struct BookManagerApp {
     book_content: text_editor::Content,
+    io_error: Option<io::ErrorKind>,
 }
 
 impl Application for BookManagerApp {
@@ -26,6 +27,7 @@ impl Application for BookManagerApp {
         (
             Self {
                 book_content: text_editor::Content::new(),
+                io_error: None,
             },
             Command::perform(
                 load_file(format!("{}/src/main.rs", env!("CARGO_MANIFEST_DIR"))),
@@ -41,11 +43,10 @@ impl Application for BookManagerApp {
     fn update(&mut self, message: Self::Message) -> Command<Self::Message> {
         match message {
             Message::Edit(action) => self.book_content.perform(action),
-            Message::FileOpened(result) => {
-                if let Ok(content) = result {
-                    self.book_content = text_editor::Content::with_text(&content);
-                }
-            }
+            Message::FileOpened(result) => match result {
+                Ok(content) => self.book_content = text_editor::Content::with_text(&content),
+                Err(error) => self.io_error = Some(error),
+            },
         }
 
         Command::none()
