@@ -1,4 +1,4 @@
-use std::{io, path::Path, sync::Arc};
+use std::{io, path::PathBuf, sync::Arc};
 
 use iced::{
     executor,
@@ -10,10 +10,11 @@ use iced::{
 enum Message {
     Open,
     Edit(text_editor::Action),
-    FileOpened(Result<Arc<String>, Error>),
+    FileOpened(Result<(PathBuf, Arc<String>), Error>),
 }
 
 struct BookManagerApp {
+    book_path: Option<PathBuf>,
     book_content: text_editor::Content,
     io_error: Option<Error>,
 }
@@ -27,13 +28,11 @@ impl Application for BookManagerApp {
     fn new(_flags: Self::Flags) -> (Self, Command<Self::Message>) {
         (
             Self {
+                book_path: None,
                 book_content: text_editor::Content::new(),
                 io_error: None,
             },
-            Command::perform(
-                load_file(format!("{}/src/main.rs", env!("CARGO_MANIFEST_DIR"))),
-                Message::FileOpened,
-            ),
+            Command::perform(load_file(default_file()), Message::FileOpened),
         )
     }
 
@@ -45,7 +44,10 @@ impl Application for BookManagerApp {
         match message {
             Message::Edit(action) => self.book_content.perform(action),
             Message::FileOpened(result) => match result {
-                Ok(content) => self.book_content = text_editor::Content::with_text(&content),
+                Ok((path, content)) => {
+                    self.book_content = text_editor::Content::with_text(&content);
+                    self.book_path = Some(path);
+                }
                 Err(error) => self.io_error = Some(error),
             },
             Message::Open => {
@@ -57,8 +59,8 @@ impl Application for BookManagerApp {
     }
 
     fn view(&self) -> Element<'_, Self::Message> {
-        let controls = row![button("Open").on_press(Message::Open)];
         let hello_world = text("Hello, world!");
+        let controls = row![button("Open").on_press(Message::Open)];
         let active_editor = text_editor(&self.book_content).on_action(Message::Edit);
 
         column![hello_world, controls, active_editor]
@@ -82,19 +84,24 @@ enum Error {
     IO(io::ErrorKind),
 }
 
-async fn load_file(path: impl AsRef<Path>) -> Result<Arc<String>, Error> {
-    tokio::fs::read_to_string(path)
+async fn load_file(path: PathBuf) -> Result<(PathBuf, Arc<String>), Error> {
+    let content = tokio::fs::read_to_string(&path)
         .await
         .map(Arc::new)
         .map_err(|error| error.kind())
-        .map_err(Error::IO)
+        .map_err(Error::IO)?;
+    Ok((path, content))
 }
 
-async fn pick_file() -> Result<Arc<String>, Error> {
+async fn pick_file() -> Result<(PathBuf, Arc<String>), Error> {
     let file_handle = rfd::AsyncFileDialog::new()
         .set_title("Choose a file...")
         .pick_file()
         .await
         .ok_or(Error::DialogClosed)?;
-    load_file(file_handle.path()).await
+    load_file(file_handle.path().to_owned()).await
+}
+
+fn default_file() -> PathBuf {
+    PathBuf::from(format!("{}/src/main.rs", env!("CARGO_MANIFEST_DIR")))
 }
