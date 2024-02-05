@@ -1,4 +1,8 @@
-use std::{collections::HashMap, ffi::OsStr, path::PathBuf};
+use std::{
+    collections::HashMap,
+    ffi::OsStr,
+    path::{Path, PathBuf},
+};
 use walkdir::WalkDir;
 
 #[derive(Debug, Clone)]
@@ -24,39 +28,27 @@ impl ProjectState {
                 continue;
             }
 
-            let extension = entry.path().extension().and_then(OsStr::to_str);
+            let path = entry.path();
+            let extension = path.extension().and_then(OsStr::to_str);
             if extension.is_some_and(|ext| ext.to_lowercase() == "str") {
-                let language = entry
-                    .path()
-                    .parent()
-                    .unwrap()
-                    .strip_prefix(search_path.clone())
-                    .unwrap()
-                    .to_str()
-                    .unwrap()
-                    .to_owned()
-                    .to_lowercase();
-                let file_name = entry
-                    .file_name()
-                    .to_str()
-                    .unwrap()
-                    .to_owned()
-                    .to_lowercase();
+                let language = file_name_string(path.parent().unwrap()).to_lowercase();
+                let file_name = file_name_string(path).to_lowercase();
                 books
                     .entry(file_name.clone())
                     .and_modify(|b: &mut Book| b.languages.push(language.clone()))
                     .or_insert(Book {
-                        path: entry.path().to_owned(),
+                        path: path.to_owned(),
                         file_name,
                         languages: vec![language],
                     });
-                // books.push(Book {
-                //     path: entry.path().to_owned(),
-                //     file_name: entry.file_name().to_str().unwrap().to_owned(),
-                // });
             }
         }
 
         Self { path, books }
     }
+}
+
+fn file_name_string(path: &Path) -> String {
+    let file_name = path.file_name();
+    file_name.map(|s| s.to_str().unwrap().to_owned()).unwrap()
 }
