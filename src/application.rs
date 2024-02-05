@@ -78,13 +78,16 @@ impl Application for BookManagerApp {
 
         let mut books: Vec<Element<'_, Self::Message>> = vec![];
         if let Some(project) = &self.project {
-            for book in project.books.iter() {
-                books.push(text(book.file_name.clone()).into());
+            for (file_name, _) in project.books.iter() {
+                books.push(text(file_name.clone()).into());
             }
         }
 
-        let left_panel = scrollable(Column::with_children(books).spacing(10).padding(10))
-            .width(Length::Fixed(256.0));
+        let left_panel = column![
+            text(books.len()),
+            scrollable(Column::with_children(books).spacing(10).padding(10))
+                .width(Length::Fixed(256.0))
+        ];
         let right_panel = column![hello_world, controls, active_editor]
             .spacing(10)
             .padding(10);
