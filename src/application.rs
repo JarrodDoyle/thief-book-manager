@@ -83,7 +83,8 @@ impl Application for BookManagerApp {
             }
         }
 
-        let left_panel = scrollable(Column::with_children(books)).width(Length::Fixed(256.0));
+        let left_panel = scrollable(Column::with_children(books).spacing(10).padding(10))
+            .width(Length::Fixed(256.0));
         let right_panel = column![hello_world, controls, active_editor]
             .spacing(10)
             .padding(10);
