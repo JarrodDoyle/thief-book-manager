@@ -23,3 +23,12 @@ pub async fn pick_file() -> Result<(PathBuf, Arc<String>), Error> {
 pub fn default_file() -> PathBuf {
     PathBuf::from(format!("{}/src/main.rs", env!("CARGO_MANIFEST_DIR")))
 }
+
+pub async fn load_folder() -> Result<PathBuf, Error> {
+    let file_handle = rfd::AsyncFileDialog::new()
+        .set_title("Choose project folder...")
+        .pick_folder()
+        .await
+        .ok_or(Error::DialogClosed)?;
+    Ok(file_handle.path().to_owned())
+}

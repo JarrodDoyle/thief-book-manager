@@ -1,5 +1,6 @@
 mod application;
 mod file;
+mod project;
 
 use std::io;
 
